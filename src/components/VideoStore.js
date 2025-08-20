@@ -73,6 +73,8 @@ function VideoStore({ machineId }) {
   const [error, setError] = useState(null);
   const [viamClient, setViamClient] = useState(null);
   const [fetching, setFetching] = useState(false);
+  const [gettingState, setGettingState] = useState(false);
+  const [storageState, setStorageState] = useState(null);
 
   useEffect(() => {
     async function fetchAndSetResources() {
@@ -156,8 +158,31 @@ function VideoStore({ machineId }) {
         }
     };
 
+    const handleGetStorageState = async () => {
+        try {
+            if (!selectedVideoStore) {
+                setError('select a video-store resource first');
+                return;
+            }
+            setError(null);
+            setGettingState(true);
+            const resp = await selectedVideoStore.doCommand(
+              Struct.fromJson({
+                command: 'get-storage-state'
+              })
+            );
+            const payload = resp?.toJson ? resp.toJson() : resp;
+            setStorageState(payload);
+        } catch (e) {
+            console.error('error getting storage state:', e);
+            setError(e?.message || 'failed to get storage state');
+        } finally {
+            setGettingState(false);
+        }
+    };
+
   if (!machineId) return null;
-  if (loading) return <div>Loading cameras...</div>;
+  if (loading) return <div>Loading machine resources...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
@@ -173,36 +198,47 @@ function VideoStore({ machineId }) {
       </div>
       {selectedVideoStore && (
         <div>
-          <div style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <label>
-          From:
-          <input
-            type="datetime-local"
-            step="1"
-            value={fromTime}
-            onChange={(e) => setFromTime(e.target.value)}
-            style={{ marginLeft: '6px' }}
-          />
-        </label>
-        <label>
-          To:
-          <input
-            type="datetime-local"
-            step="1"
-            value={toTime}
-            onChange={(e) => setToTime(e.target.value)}
-            style={{ marginLeft: '6px' }}
-          />
-        </label>
-      </div>
-      <div style={{ marginTop: '8px' }}>
-        <small>Selected range (UTC): {fromUTC} → {toUTC}</small>
-      </div>
-      <div style={{ marginTop: '8px' }}>
-        <button onClick={handleFetchVideo} disabled={fetching}>
-          {fetching ? 'Fetching…' : 'Fetch video'}
-        </button>
-      </div>
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '8px' }}>Get storage state</div>
+            <div>
+              <button onClick={handleGetStorageState} disabled={gettingState}>
+                {gettingState ? 'Getting…' : 'Get storage state'}
+              </button>
+            </div>
+            {storageState && (
+              <pre style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>{JSON.stringify(storageState, null, 2)}</pre>
+            )}
+          </div>
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '8px' }}>Fetch video</div>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <label>
+                From:
+                <input
+                  type="datetime-local"
+                  step="1"
+                  value={fromTime}
+                  onChange={(e) => setFromTime(e.target.value)}
+                  style={{ marginLeft: '6px' }}
+                />
+              </label>
+              <label>
+                To:
+                <input
+                  type="datetime-local"
+                  step="1"
+                  value={toTime}
+                  onChange={(e) => setToTime(e.target.value)}
+                  style={{ marginLeft: '6px' }}
+                />
+              </label>
+            </div>
+            <div style={{ marginTop: '8px' }}>
+              <button onClick={handleFetchVideo} disabled={fetching}>
+                {fetching ? 'Fetching…' : 'Fetch video'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
