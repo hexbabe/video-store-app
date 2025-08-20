@@ -1,0 +1,15 @@
+{
+    "module_id": "viam:video-store-app",
+    "visibility": "public",
+    "url": "https://github.com/hexbabe/viam-video-store-app",
+    "description": "A web app that gets videos from video-store.",
+    "models": [],
+    "entrypoint": "",
+    "applications": [
+      {
+        "name": "video-store-app",
+        "type": "single_machine",
+        "entrypoint": "build/index.html"
+      }
+    ]
+}
